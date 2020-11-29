@@ -1,14 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
-namespace RestAPI.ResponseObjects
+﻿namespace RestAPI.ResponseObjects
 {
     public class LogInfo
     {
-        public string Id { get; set; }
-        public long FileSize { get; set; }
-        public string FullName { get; set; }
+        public LogInfo(string id, long fileSize, string fullName)
+        {
+            Id = id;
+            FileSize = fileSize;
+            FullName = fullName;
+        }
+        public string Id { get;  }
+        public long FileSize { get;  }
+        public string FullName { get;  }
     }
 }

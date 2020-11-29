@@ -1,48 +1,104 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-using RestAPI;
 using RestAPI.Controllers;
 using RestAPI.ResponseObjects;
 using System.Collections.Generic;
-using System.IO;
+using FluentAssertions;
+using RestAPI.Services.LogFinder;
+using Xunit;
 
 namespace RestAPITests
 {
-    [TestClass]
     public class LogFileControllerTests
     {
-        [TestMethod]
-        public void GetLogFile_ShouldReturn_LogFileIndex()
+        [Fact]
+        public void GetLogFile_ShouldReturnLogFileIndex()
         {
             //Arrange
-            var expected = new LogIndex();
+            const string expectedValue = "fakeFileName";
             var mockLogFinder = new Mock<ILogFinder>();
+            mockLogFinder
+                .Setup(x => x.GetLogIndex())
+                .Returns(GetTestLogIndex());
+            
+            var controller = new LogFileController(mockLogFinder.Object);
 
-            var controller = new LogFileController(new MockLogReader(), new MockLogFinder());
+            //Act
+            var result = controller.Get();
+            
+            //Assert
+            //xUnit
+            var actionResult = Assert.IsType<ActionResult<LogIndex>>(result);
+            var okResult = Assert.IsType<OkObjectResult>(actionResult.Result);
+            var logIndex = Assert.IsType<LogIndex>(okResult.Value);
+            Assert.Equal(expectedValue,logIndex.LogFiles[0].FullName);
+            //xUnit
+            
+            //FluentAssertion
+            result.Should().BeOfType<ActionResult<LogIndex>>();
+            var fluentActionResult = result.As<ActionResult<LogIndex>>();
+            
+            fluentActionResult.Result.Should().BeOfType<OkObjectResult>();
+            var fluentOkResult = fluentActionResult.Result.As<OkObjectResult>();
 
-            var response = controller.Get();
-            var result = response.Result as OkObjectResult;
-            var value = result.Value;
-            Assert.IsInstanceOfType(response, typeof(ActionResult<LogIndex>));
-            //Assert.AreEqual(expected, result);
+            fluentOkResult.Value.Should().BeOfType<LogIndex>();
+            var fluentLogIndex = fluentOkResult.Value.As<LogIndex>();
+            
+            fluentLogIndex.LogFiles[0].FullName.Should().Be(expectedValue);
+            //FluentAssertion
         }
-        [TestMethod]
-        public void GetLogFileById_ShouldReturn_SpecifiedLogContent()
+        [Fact]
+        public void GetLogFileById_Exists_ShouldReturnSpecifiedLogContent()
         {
             //Arrange so that there is a mocked directory which contains mocked file
-            var id = "1";
+            const string id = "1";
+            var logFileContent = "This is the content of the log.";
+            var logFile = new LogFile(logFileContent);
+
+
             var mockLogFinder = new Mock<ILogFinder>();
-
             mockLogFinder
-                .Setup(x => x.GetLogDirectoryFileInfo("fakePath"))
-                .Returns(new List<FileInfo>() { new FileInfo(null) });
+                .Setup(x => x.GetLogFile(id))
+                .Returns(new GetLogFileResult.Success(logFile));
 
-            var logContent = "This is logdagta";
             
-            var controller = new LogFileController(null, null);
+            var controller = new LogFileController(mockLogFinder.Object);
+            
+            var actionResult = controller.GetById(id);
 
-            var result = controller.GetById(id);
+            actionResult.Result.Should().BeOfType<OkObjectResult>();
+            var okObjectResult = actionResult.Result.As<OkObjectResult>();
+            
+            okObjectResult.Value.Should().BeOfType<LogFile>();
+
+            var responseLogFile = okObjectResult.Value.As<LogFile>();
+
+            responseLogFile.Content.Should().Be(logFileContent);
+        }
+        [Fact]
+        public void GetLogFileById_DoesNotExist_ShouldReturnNotFound()
+        {
+            const string id = "1";
+            var mockLogFinder = new Mock<ILogFinder>();
+            mockLogFinder
+                .Setup(x => x.GetLogFile(id))
+                .Returns(new GetLogFileResult.LogFileNotFound());
+            
+            var controller = new LogFileController(mockLogFinder.Object);
+            
+            var actionResult = controller.GetById(id);
+
+            actionResult.Result.Should().BeOfType<NotFoundResult>();
+        }
+        private LogIndex GetTestLogIndex()
+        {
+            return new LogIndex()
+            {
+                LogFiles = new List<LogInfo>()
+                {
+                    new LogInfo("id",123, "fakeFileName")
+                }
+            };
         }
     }
 }

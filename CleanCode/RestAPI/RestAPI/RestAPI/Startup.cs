@@ -3,7 +3,11 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
+using RestAPI.Options;
+using RestAPI.Services.FileReader;
+using RestAPI.Services.LogFinder;
 
 namespace RestAPI
 {
@@ -19,14 +23,20 @@ namespace RestAPI
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-
-            services.AddControllers();
+            services.AddControllers(); 
             services.AddScoped<ILogFinder, LogFinder>();
-            services.AddScoped<ILogReader, LogReader>();
+            services.AddScoped<IFileReader, FileReader>();
+            ConfigureOptions(services);
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "RestAPI", Version = "v1" });
             });
+        }
+
+        private void ConfigureOptions(IServiceCollection services)
+        {
+            services.Configure<LogFinderOptions>(Configuration.GetSection(LogFinderOptions.SectionName));
+            services.AddSingleton<IValidateOptions<LogFinderOptions>, LogFinderOptionsValidator>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

@@ -1,5 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System;
+using Microsoft.AspNetCore.Mvc;
 using RestAPI.ResponseObjects;
+using RestAPI.Services.LogFinder;
 
 namespace RestAPI.Controllers
 {
@@ -7,48 +9,29 @@ namespace RestAPI.Controllers
     [Route("api/log-files")]
     public class LogFileController : ControllerBase
     {
-        private readonly ILogReader _logReader;
         private readonly ILogFinder _logFinder;
 
-        public LogFileController(ILogReader logReader, ILogFinder logFinder)
+        public LogFileController(ILogFinder logFinder)
         {
-            _logReader = logReader ?? throw new System.ArgumentNullException(nameof(logReader));
-            _logFinder = logFinder ?? throw new System.ArgumentNullException(nameof(logFinder));
+            _logFinder = logFinder ?? throw new ArgumentNullException(nameof(logFinder));
         }
 
         [HttpGet]
         public ActionResult<LogIndex> Get()
         {
-            var returnIndex = new LogIndex()
-            {
-                LogFiles = new LogInfo[]
-                {
-                    new LogInfo()
-                    {
-                        Id = "1",
-                        FileSize = 123,
-                        FullName = "TheFirstLogFile"
-                    },
-                    new LogInfo()
-                    {
-                        Id = "2",
-                        FileSize = 345,
-                        FullName = "TheSecondLogFile"
-                    }
-                }
-            };
-            return Ok(returnIndex);
+            var logIndex = _logFinder.GetLogIndex();
+            
+            return Ok(logIndex);
+            
         }
         [HttpGet("{id}")]
         public ActionResult<LogFile> GetById(string id)
         {
-            if (id == "1")
-            {
-                return Ok(new LogFile());
+            var logFileResult = _logFinder.GetLogFile(id);
 
-            }
-            return NotFound();
-
+            return logFileResult.Match<ActionResult<LogFile>>(
+                successResult => Ok(successResult.LogFile), 
+                notFoundResult => NotFound());
         }
     }
 }

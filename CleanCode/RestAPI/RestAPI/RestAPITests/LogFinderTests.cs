@@ -7,7 +7,6 @@ using RestAPI.ResponseObjects;
 using Xunit;
 using RestAPI.Services.FileReader;
 using RestAPI.Services.LogFinder;
-using FileInfo = RestAPI.Services.FileReader.FileInfo;
 
 namespace RestAPITests
 {
@@ -18,7 +17,7 @@ namespace RestAPITests
         {
             //Arrange
             const string logId = "123";
-            var fileInfo = new FileInfo(123, "fileName", "foobar");
+            var fileInfo = new FileInfo(123, "log_fileName.json", "foobar");
             
             var optionsMock = new Mock<IOptions<LogFinderOptions>>();
             optionsMock.Setup(x => x.Value)
@@ -39,6 +38,9 @@ namespace RestAPITests
             var successResult = result.As<GetLogFileResult.Success>();
             successResult.LogFile.Content.Should().Be(fileInfo.Content);
         }
+       
+       
+         
         [Fact]
         public void GetLogFile_FileDoesNotExist_ShouldReturnNotFound()
         {
@@ -113,8 +115,8 @@ namespace RestAPITests
             {
                 Files = new List<FileMetaData>()
                 {
-                    new FileMetaData(123,"log_ThisIsTheLogId"),
-                    new FileMetaData(356,"log_LolIdOfThisLog")
+                    new FileMetaData(123,"log_ThisIsTheLogId.txt"),
+                    new FileMetaData(356,"log_LolIdOfThisLog.json")
                 }
             };
         }

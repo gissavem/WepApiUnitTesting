@@ -20,6 +20,7 @@ namespace RestAPI.Services.LogFinder
         public GetLogFileResult GetLogFile(string id)
         {
             var filePath = _logFinderOptions.FullPath + id;
+            var logIndex = GetLogIndex();
             var fileContent = _fileReader.ReadFile(filePath);
 
             return fileContent.Match<GetLogFileResult>(
